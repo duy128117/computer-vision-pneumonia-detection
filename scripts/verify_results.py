@@ -50,6 +50,8 @@ def main():
         assert sum(saved[k] for k in ("tp", "tn", "fp", "fn")) == len(test)
         print(f"{name}: checkpoint, history, test coverage and recomputed metrics OK")
     report = (results / "report.md").read_text(encoding="utf-8")
+    assert "| Model | Accuracy" in report
+    assert "| Model | Accuracy | Precision | Sensitivity | Specificity | F1 | AUC | FN |\n|---|" in report
     for path in re.findall(r"!\[[^\]]*\]\(([^)]+)\)", report):
         assert (results / path).is_file(), path
     with zipfile.ZipFile(results / "presentation.pptx") as deck:

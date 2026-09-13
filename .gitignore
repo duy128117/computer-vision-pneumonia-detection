@@ -8,3 +8,4 @@ results/
 *.zip
 .tmp/
 .torch/
+runs/

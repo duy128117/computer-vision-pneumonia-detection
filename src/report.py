@@ -154,7 +154,9 @@ def report(output="."):
         "Kermany, Zhang, Goldbaum (2018). https://doi.org/10.17632/rscbjbr9sj.2 (CC BY 4.0).",
         "ResNet: https://arxiv.org/abs/1512.03385 ; DenseNet: https://arxiv.org/abs/1608.06993 ; Grad-CAM: https://arxiv.org/abs/1610.02391",
     ]
-    (results / "report.md").write_text("\n\n".join(lines), encoding="utf-8")
+    # Empty strings in ``lines`` already delimit Markdown paragraphs. Joining with
+    # one newline also keeps table rows contiguous so all renderers recognize them.
+    (results / "report.md").write_text("\n".join(lines), encoding="utf-8")
     deck = Presentation()
 
     def slide(title, text="", picture=None):
