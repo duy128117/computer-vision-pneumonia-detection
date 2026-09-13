@@ -1,0 +1,893 @@
+ĐẶC TẢ ĐỀ TÀI
+Tên đề tài
+
+Phân loại viêm phổi từ ảnh X-quang ngực bằng Deep Learning và giải thích kết quả bằng Grad-CAM
+
+Tên tiếng Anh có thể dùng:
+
+Pneumonia Classification from Chest X-ray Images using Transfer Learning and Grad-CAM Explainability
+
+1. Bài toán nghiên cứu
+
+Đề tài nghiên cứu khả năng sử dụng Deep Learning trong thị giác máy tính để tự động phân loại ảnh X-quang ngực thành hai lớp:
+
+Normal — Bình thường và Pneumonia — Viêm phổi.
+
+Ngoài việc mô hình phải dự đoán chính xác, đề tài còn phải giải quyết một vấn đề quan trọng của Deep Learning là khả năng giải thích kết quả.
+
+Vì vậy, sau khi mô hình dự đoán một ảnh là viêm phổi hoặc bình thường, hệ thống cần sử dụng Grad-CAM để tạo heatmap cho biết mô hình đã tập trung vào vùng nào trên ảnh X-quang khi đưa ra quyết định.
+
+Câu hỏi nghiên cứu chính là:
+
+Deep Learning có thể phân loại ảnh X-quang ngực thành Normal/Pneumonia chính xác đến mức nào, mô hình ResNet và DenseNet khác nhau ra sao, và mô hình đang dựa vào vùng nào trên ảnh để đưa ra quyết định?
+
+2. Yêu cầu quan trọng nhất của đề tài
+
+Đây phải là một project thực nghiệm hoàn chỉnh, không chỉ dừng lại ở việc tìm hiểu thuật toán hoặc gọi model pretrained để inference.
+
+Phải có quá trình:
+
+Dataset → Preprocessing → Data Augmentation → Training → Validation → Testing → Evaluation → Grad-CAM → Inference Application → Báo cáo kết quả.
+
+Kết quả trình bày cuối cùng bắt buộc phải được lấy trực tiếp từ quá trình chạy code và train model thực tế.
+
+Tuyệt đối không tự đặt số liệu Accuracy, Loss, Precision hay AUC để minh họa.
+
+Các số liệu trong slide/báo cáo phải đọc từ kết quả thực nghiệm thực sự do chương trình tạo ra.
+
+3. Dataset
+
+Sử dụng ảnh X-quang ngực thật, không sử dụng ảnh AI tạo ra.
+
+Có thể sử dụng dataset Chest X-Ray Pneumonia phổ biến của Kermany hoặc dataset tương đương có hai lớp:
+
+NORMAL
+PNEUMONIA
+
+Cần thống kê trước khi train:
+
+Số ảnh Normal
+Số ảnh Pneumonia
+
+Số ảnh Train
+Số ảnh Validation
+Số ảnh Test
+
+Đồng thời tạo biểu đồ phân bố dữ liệu để kiểm tra class imbalance.
+
+Ví dụ cần sinh:
+
+dataset_distribution.png
+
+Nếu dữ liệu mất cân bằng đáng kể thì phải thử ít nhất một phương pháp xử lý như:
+
+class weight
+weighted loss
+weighted sampler
+
+Không được oversampling một cách tùy tiện trước khi chia dataset vì có thể gây data leakage.
+
+Nếu có thông tin bệnh nhân, ưu tiên patient-level split để ảnh của cùng một bệnh nhân không xuất hiện đồng thời ở train và test.
+
+4. Tiền xử lý ảnh
+
+Ảnh đầu vào là ảnh X-quang grayscale.
+
+Pipeline đề xuất:
+
+Original X-ray
+        ↓
+Resize
+        ↓
+Convert / repeat grayscale → 3 channels
+        ↓
+Data Augmentation (TRAIN only)
+        ↓
+Normalize
+        ↓
+Model
+
+Kích thước ảnh có thể sử dụng:
+
+224 × 224
+
+phù hợp với ResNet50 và DenseNet121 pretrained trên ImageNet.
+
+Vì ảnh X-quang là grayscale nhưng ImageNet model sử dụng RGB nên có thể lặp lại ảnh thành:
+
+R = X-ray
+G = X-ray
+B = X-ray
+
+Sau đó normalize theo pretrained weights tương ứng.
+
+5. Data Augmentation
+
+Chỉ áp dụng augmentation cho training dataset.
+
+Có thể sử dụng các biến đổi nhẹ như:
+
+RandomRotation
+RandomAffine
+translation
+small zoom
+small contrast adjustment
+small brightness adjustment
+
+Không nên augmentation quá mạnh vì có thể làm thay đổi cấu trúc giải phẫu của ảnh X-quang.
+
+Validation và Test không được augmentation ngẫu nhiên.
+
+Pipeline:
+
+TRAIN:
+Resize
+→ Augmentation
+→ Normalize
+
+VAL / TEST:
+Resize
+→ Normalize
+6. Hai model bắt buộc nghiên cứu
+
+Đề tài so sánh hai mô hình:
+
+ResNet50
+
+Ý tưởng chính:
+
+Residual Learning / Skip Connection
+
+Một residual block có dạng:
+
+Input
+  │
+  ├─────────────────┐
+  ↓                 │
+Conv → Conv         │
+  ↓                 │
+  + ←───────────────┘
+  ↓
+Output
+
+Skip connection giúp gradient truyền qua mạng sâu tốt hơn và giảm vấn đề vanishing gradient.
+
+ResNet50 được sử dụng như một baseline mạnh.
+
+DenseNet121
+
+Ý tưởng chính:
+
+Dense Connectivity
+
+Mỗi layer nhận feature map từ nhiều layer trước đó:
+
+L1 ──────────────→ L4
+ ↓ ↘               ↑
+L2 ────────→ L4    │
+ ↓ ↘               │
+L3 ────────────────┘
+
+DenseNet có khả năng tái sử dụng feature và thường có số tham số thấp hơn ResNet50.
+
+Đây là model thứ hai dùng để so sánh với ResNet50.
+
+7. Transfer Learning
+
+Không train hoàn toàn từ đầu.
+
+Sử dụng:
+
+ImageNet pretrained weights
+
+cho:
+
+ResNet50
+DenseNet121
+
+Thay classifier cuối cùng thành classifier phục vụ bài toán:
+
+Normal
+Pneumonia
+
+Có thể sử dụng output một neuron:
+
+logit
+
+sau đó:
+
+sigmoid(logit)
+
+để lấy probability Pneumonia.
+
+8. Chiến lược training
+
+Nên thực hiện fine-tuning 2 giai đoạn.
+
+Giai đoạn 1
+
+Freeze backbone:
+
+Pretrained CNN
+      ↓
+   FREEZE
+      ↓
+new classifier
+      ↓
+TRAIN
+
+Chỉ train classifier mới.
+
+Mục đích là để classifier thích nghi với dataset X-ray mà không phá hỏng feature pretrained ngay từ đầu.
+
+Giai đoạn 2
+
+Unfreeze một phần hoặc toàn bộ backbone.
+
+Sau đó train với learning rate nhỏ hơn.
+
+Ví dụ:
+
+Stage 1
+LR = 1e-3
+
+Stage 2
+LR = 1e-4 hoặc 1e-5
+
+Không coi các con số trên là giá trị cố định; phải điều chỉnh qua thực nghiệm.
+
+9. Loss function
+
+Bài toán binary classification có thể sử dụng:
+
+BCEWithLogitsLoss
+
+Nếu dataset mất cân bằng có thể sử dụng:
+
+BCEWithLogitsLoss(pos_weight=...)
+
+hoặc class weighting phù hợp.
+
+Nên có một thực nghiệm để xem weighted loss có cải thiện Recall/Sensitivity hay không.
+
+10. Optimizer
+
+Có thể sử dụng:
+
+Adam
+
+hoặc:
+
+AdamW
+
+Khuyến nghị:
+
+AdamW
+
+kết hợp learning-rate scheduler.
+
+Ví dụ:
+
+ReduceLROnPlateau
+
+hoặc:
+
+CosineAnnealingLR
+11. Early stopping
+
+Trong quá trình training phải theo dõi validation loss hoặc một metric phù hợp.
+
+Nếu validation không cải thiện sau một số epoch thì:
+
+Early Stopping
+
+và lưu lại model tốt nhất.
+
+Không sử dụng model của epoch cuối một cách mặc định.
+
+Model tốt nhất nên lưu:
+
+checkpoints/
+    best_resnet50.pth
+    best_densenet121.pth
+12. Phải train thật và lưu lịch sử training
+
+Đây là yêu cầu rất quan trọng.
+
+Mỗi epoch cần lưu ít nhất:
+
+epoch
+
+train_loss
+val_loss
+
+train_accuracy
+val_accuracy
+
+train_precision
+val_precision
+
+train_recall
+val_recall
+
+train_f1
+val_f1
+
+val_auc
+learning_rate
+
+Có thể lưu vào:
+
+history_resnet50.csv
+history_densenet121.csv
+
+Ví dụ:
+
+epoch,train_loss,val_loss,train_acc,val_acc,precision,recall,f1,auc
+1,...
+2,...
+3,...
+...
+
+Slide sau này phải đọc từ các CSV này chứ không nhập thủ công số liệu.
+
+13. Các biểu đồ TRAINING bắt buộc
+
+Đây là phần bạn vừa bổ sung và nên coi là yêu cầu bắt buộc của project.
+
+Sau quá trình train phải tạo các biểu đồ thật.
+
+Ít nhất cần có:
+
+Train Loss vs Validation Loss
+
+Train Accuracy vs Validation Accuracy
+
+Validation Precision
+
+Validation Recall / Sensitivity
+
+Validation F1-score
+
+Validation AUC
+
+Ví dụ biểu đồ Loss:
+
+Loss
+│\
+│ \
+│  \      Validation
+│   \____
+│
+│     \________ Train
+└──────────────────── Epoch
+
+Biểu đồ phải dựa trên history thực tế.
+
+Output:
+
+results/plots/
+
+resnet50_loss_curve.png
+resnet50_accuracy_curve.png
+resnet50_precision_recall.png
+
+densenet121_loss_curve.png
+densenet121_accuracy_curve.png
+densenet121_precision_recall.png
+
+Có thể tạo thêm biểu đồ so sánh:
+
+ResNet50 vs DenseNet121
+
+Accuracy
+Sensitivity
+Specificity
+F1
+AUC
+14. Các metric đánh giá bắt buộc
+
+Không chỉ nhìn Accuracy.
+
+Phải đánh giá:
+
+Accuracy
+Precision
+Recall / Sensitivity
+Specificity
+F1-Score
+ROC-AUC
+Confusion Matrix
+
+Trong bài toán này quy ước:
+
+Positive = Pneumonia
+Negative = Normal
+
+Do đó:
+
+TP:
+Pneumonia → Pneumonia
+
+TN:
+Normal → Normal
+
+FP:
+Normal → Pneumonia
+
+FN:
+Pneumonia → Normal
+
+Đặc biệt cần chú ý FN vì đây là các ảnh viêm phổi nhưng model dự đoán thành bình thường.
+
+15. Công thức đánh giá
+
+Accuracy:
+
+$$ Accuracy = \frac{TP+TN}{TP+TN+FP+FN} $$
+
+Precision:
+
+$$ Precision = \frac{TP}{TP+FP} $$
+
+Sensitivity / Recall:
+
+$$ Sensitivity = \frac{TP}{TP+FN} $$
+
+Specificity:
+
+$$ Specificity = \frac{TN}{TN+FP} $$
+
+F1:
+
+$$ F1 = \frac{2PR}{P+R} $$
+
+AUC được tính từ ROC Curve.
+
+16. Confusion Matrix
+
+Chương trình phải tự tạo:
+
+                Predicted
+             Normal  Pneumonia
+
+Actual Normal   TN      FP
+
+Pneumonia       FN      TP
+
+Lưu thành:
+
+resnet50_confusion_matrix.png
+densenet121_confusion_matrix.png
+
+Không tự vẽ matrix giả trong slide.
+
+17. ROC Curve
+
+Phải lấy probability prediction của model trên test set.
+
+Từ đó tính:
+
+FPR
+TPR
+AUC
+
+và tạo ROC Curve.
+
+Tốt nhất tạo thêm biểu đồ chung:
+
+ROC
+
+ResNet50
+DenseNet121
+Random baseline
+
+để thấy model nào tốt hơn.
+
+18. Bảng kết quả cuối cùng
+
+Sau khi train xong phải sinh bảng như:
+
+Model	Accuracy	Precision	Sensitivity	Specificity	F1	AUC
+ResNet50	kết quả thật	kết quả thật	kết quả thật	kết quả thật	kết quả thật	kết quả thật
+DenseNet121	kết quả thật	kết quả thật	kết quả thật	kết quả thật	kết quả thật	kết quả thật
+
+Không điền trước giá trị.
+
+Có thể tự động xuất:
+
+results/model_comparison.csv
+19. Explainable AI — Grad-CAM
+
+Sau classification, thực hiện Grad-CAM.
+
+Grad-CAM sử dụng gradient của target class đối với feature maps của convolution layer cuối để tạo heatmap.
+
+Quy trình:
+
+X-ray
+   ↓
+CNN
+   ↓
+Prediction
+   ↓
+Target class
+   ↓
+Gradient
+   ↓
+Last convolution feature maps
+   ↓
+Grad-CAM
+   ↓
+Heatmap
+   ↓
+Overlay lên X-ray
+20. Grad-CAM phải chạy trên model đã train
+
+Không sử dụng ảnh heatmap minh họa lấy trên mạng cho kết quả cuối cùng.
+
+Grad-CAM phải được sinh trực tiếp từ:
+
+best_resnet50.pth
+
+hoặc:
+
+best_densenet121.pth
+
+trên ảnh test thực.
+
+Nên lấy ít nhất 4 nhóm case:
+
+True Positive
+True Negative
+False Positive
+False Negative
+
+Điều này sẽ làm phần nghiên cứu rất tốt.
+
+Ví dụ:
+
+results/gradcam/
+
+TP_001.png
+TN_001.png
+FP_001.png
+FN_001.png
+
+Nhờ vậy có thể phân tích:
+
+Tại sao model đoán đúng?
+
+và:
+
+Tại sao model đoán sai?
+
+21. Ý nghĩa Grad-CAM
+
+Nếu heatmap tập trung vào vùng phổi có dấu hiệu bất thường thì đây là tín hiệu cho thấy model có thể đang sử dụng feature có ý nghĩa.
+
+Nếu model tập trung vào:
+
+chữ
+marker
+viền ảnh
+background
+medical device
+artifact
+
+thì có thể model đang học shortcut.
+
+Đây chính là phần Explainable AI quan trọng của đề tài.
+
+Cần nhấn mạnh:
+
+Grad-CAM không chứng minh model suy luận giống bác sĩ và cũng không thay thế chẩn đoán lâm sàng.
+
+22. Sản phẩm cuối cùng
+
+Ngoài notebook training, nên có một ứng dụng demo.
+
+Có thể làm bằng:
+
+Streamlit
+
+hoặc:
+
+Gradio
+
+Streamlit sẽ khá phù hợp.
+
+Giao diện:
+
+PNEUMONIA CLASSIFICATION
+
+[ Upload Chest X-ray ]
+
+        ↓
+
+Original X-ray
+
+Prediction:
+Pneumonia
+
+Probability:
+87.4%
+
+        ↓
+
+Grad-CAM
+[heatmap image]
+
+Đây sẽ là sản phẩm thực tế để trình bày trên lớp.
+
+23. Chức năng sản phẩm
+
+Ứng dụng nên có luồng:
+
+Upload X-ray
+      ↓
+Validate image
+      ↓
+Preprocess
+      ↓
+Load trained model
+      ↓
+Inference
+      ↓
+Prediction
+      ↓
+Probability
+      ↓
+Grad-CAM
+      ↓
+Display results
+
+Có thể cho phép lựa chọn:
+
+ResNet50
+DenseNet121
+
+để so sánh trực tiếp.
+
+24. Kết quả inference cần hiển thị
+
+Ví dụ:
+
+MODEL
+DenseNet121
+
+PREDICTION
+Pneumonia
+
+CONFIDENCE
+91.23%
+
+NORMAL
+8.77%
+
+PNEUMONIA
+91.23%
+
+Sau đó hiển thị:
+
+Original X-ray
+Grad-CAM Heatmap
+Grad-CAM Overlay
+25. Công nghệ
+
+Stack đề xuất:
+
+Python 3.x
+
+PyTorch
+
+Torchvision
+
+NumPy
+
+Pandas
+
+Matplotlib
+
+scikit-learn
+
+OpenCV
+
+Pillow
+
+Captum hoặc tự implement Grad-CAM
+
+Streamlit / Gradio
+
+Jupyter Notebook
+
+Google Colab GPU
+
+Git / GitHub
+26. Cấu trúc project Codex nên tạo
+pneumonia-xray-classification/
+│
+├── data/
+│   ├── train/
+│   │   ├── NORMAL/
+│   │   └── PNEUMONIA/
+│   │
+│   ├── val/
+│   │   ├── NORMAL/
+│   │   └── PNEUMONIA/
+│   │
+│   └── test/
+│       ├── NORMAL/
+│       └── PNEUMONIA/
+│
+├── src/
+│   ├── dataset.py
+│   ├── transforms.py
+│   ├── models.py
+│   ├── train.py
+│   ├── evaluate.py
+│   ├── metrics.py
+│   ├── gradcam.py
+│   ├── inference.py
+│   └── utils.py
+│
+├── configs/
+│   ├── resnet50.yaml
+│   └── densenet121.yaml
+│
+├── notebooks/
+│   └── analysis.ipynb
+│
+├── checkpoints/
+│   ├── best_resnet50.pth
+│   └── best_densenet121.pth
+│
+├── logs/
+│   ├── history_resnet50.csv
+│   └── history_densenet121.csv
+│
+├── results/
+│   ├── plots/
+│   ├── confusion_matrix/
+│   ├── roc/
+│   ├── gradcam/
+│   ├── predictions/
+│   └── model_comparison.csv
+│
+├── app/
+│   └── app.py
+│
+├── requirements.txt
+├── README.md
+└── .gitignore
+27. Quy trình thực hiện toàn bộ project
+
+Đây là flow Codex nên bám sát:
+
+1. Download / chuẩn bị Dataset
+              ↓
+2. Phân tích dataset
+              ↓
+3. Kiểm tra mất cân bằng
+              ↓
+4. Train / Validation / Test split
+              ↓
+5. Preprocessing
+              ↓
+6. Data Augmentation
+              ↓
+7. ResNet50 pretrained
+              ↓
+8. Train ResNet50
+              ↓
+9. Fine-tune ResNet50
+              ↓
+10. Evaluate ResNet50
+              ↓
+11. DenseNet121 pretrained
+              ↓
+12. Train DenseNet121
+              ↓
+13. Fine-tune DenseNet121
+              ↓
+14. Evaluate DenseNet121
+              ↓
+15. Training curves
+              ↓
+16. Confusion Matrix
+              ↓
+17. ROC / AUC
+              ↓
+18. So sánh hai model
+              ↓
+19. Chọn best model
+              ↓
+20. Grad-CAM
+              ↓
+21. Phân tích TP / TN / FP / FN
+              ↓
+22. Xây dựng ứng dụng demo
+              ↓
+23. Test inference
+              ↓
+24. Tổng hợp kết quả thực nghiệm
+              ↓
+25. Báo cáo / Slide
+28. Phần nghiên cứu không nên chỉ hỏi "model nào Accuracy cao"
+
+Phần kết luận phải phân tích sâu hơn.
+
+Ví dụ ResNet50 có thể:
+
+Accuracy tốt
+AUC tốt
+
+nhưng DenseNet121 có thể:
+
+Sensitivity cao hơn
+FN thấp hơn
+
+Khi đó trong bối cảnh phát hiện pneumonia, DenseNet121 có thể đáng chú ý hơn dù Accuracy không cao hơn nhiều.
+
+Do đó model cuối cùng nên được đánh giá dựa trên:
+
+AUC
+Sensitivity
+Specificity
+F1
+Confusion Matrix
+Grad-CAM
+
+chứ không dựa một mình vào Accuracy.
+
+29. Một phần rất nên có: phân tích lỗi
+
+Sau test, chương trình nên tự tìm:
+
+False Positive samples
+
+False Negative samples
+
+Sau đó lưu ảnh.
+
+Ví dụ:
+
+results/errors/
+
+false_positive/
+false_negative/
+
+Tiếp tục chạy Grad-CAM trên các ảnh đó.
+
+Phần này giúp bạn trả lời:
+
+Model sai ở đâu?
+
+thay vì chỉ nói:
+
+Model đạt Accuracy 90%.
+
+Đây là điểm làm đề tài có chất nghiên cứu hơn.
+
+30. So sánh thực nghiệm
+
+Ít nhất nên có 2 thực nghiệm chính:
+
+Experiment 1
+ResNet50
+
+Experiment 2
+DenseNet121
+
+Nếu thời gian cho phép có thể bổ sung:
+
+Experiment 3
+DenseNet121 + class weighting
+
+hoặc:
+
+Baseline transfer learning
+vs
+Fine-tuning
+
+Như vậy bạn có thể chứng minh việc fine-tuning hoặc cân bằng dữ liệu có thực sự có tác dụng.
