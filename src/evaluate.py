@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 from PIL import Image
-from sklearn.metrics import ConfusionMatrixDisplay, roc_curve
+from sklearn.metrics import ConfusionMatrixDisplay, roc_curve, classification_report
 from torch.utils.data import DataLoader
 from .dataset import XrayDataset
 from .models import load_checkpoint
@@ -78,6 +78,15 @@ def evaluate(checkpoint, manifest="results/manifest.csv", output="."):
             epoch=metadata["epoch"],
         ),
     )
+    
+    # Generate and save classification report
+    report = classification_report(
+        predictions.label, 
+        predictions.predicted, 
+        target_names=["NORMAL", "PNEUMONIA"]
+    )
+    (results / f"{name}_classification_report.txt").write_text(report, encoding="utf-8")
+    
     ConfusionMatrixDisplay.from_predictions(
         predictions.label,
         predictions.predicted,

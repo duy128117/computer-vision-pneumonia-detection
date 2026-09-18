@@ -6,7 +6,10 @@ from matplotlib import colormaps
 
 def gradcam(model, tensor, target=None):
     """Binary target score: +logit for pneumonia, -logit for normal."""
-    layer = model.layer4 if hasattr(model, "layer4") else model.features.norm5
+    if hasattr(model, "backbone") and hasattr(model.backbone, "features"):
+        layer = model.backbone.features.norm5
+    else:
+        layer = model.layer4 if hasattr(model, "layer4") else model.features.norm5
     captured = {}
 
     def capture(module, inputs, output):
