@@ -83,7 +83,8 @@ def evaluate(checkpoint, manifest="results/manifest.csv", output="."):
     report = classification_report(
         predictions.label, 
         predictions.predicted, 
-        target_names=["NORMAL", "PNEUMONIA"]
+        target_names=["NORMAL", "PNEUMONIA"],
+        zero_division=0,
     )
     (results / f"{name}_classification_report.txt").write_text(report, encoding="utf-8")
     

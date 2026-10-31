@@ -45,5 +45,14 @@ def download(name):
 
 
 if __name__ == "__main__":
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        list(pool.map(download, ["resnet50-11ad3fa6.pth", "densenet121-a639ec97.pth"]))
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        list(
+            pool.map(
+                download,
+                [
+                    "resnet50-11ad3fa6.pth",
+                    "densenet121-a639ec97.pth",
+                    "inception_v3_google-0cc3c7bd.pth",
+                ],
+            )
+        )

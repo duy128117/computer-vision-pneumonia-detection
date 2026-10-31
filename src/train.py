@@ -17,6 +17,8 @@ def run_epoch(model, loader, criterion, target_device, optimizer=None, frozen=Fa
     if frozen:
         model.eval()
         classifier(model).train()
+        if hasattr(model, "attention_gate"):
+            model.attention_gate.train()
     total, labels, probabilities = 0.0, [], []
     for batch_index, (images, targets, _) in enumerate(loader, 1):
         images = images.to(target_device)
@@ -97,6 +99,9 @@ def train(config_path):
             parameter.requires_grad_(stage == 2)
         for parameter in classifier(model).parameters():
             parameter.requires_grad_(True)
+        if hasattr(model, "attention_gate"):
+            for parameter in model.attention_gate.parameters():
+                parameter.requires_grad_(True)
         optimizer = torch.optim.AdamW(
             filter(lambda p: p.requires_grad, model.parameters()),
             lr=lr,

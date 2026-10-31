@@ -97,14 +97,19 @@ def test_gradcam_binary_target_sign():
     assert negative.max() == 0
 
 
-@pytest.mark.parametrize("name", ["resnet50", "densenet121"])
+@pytest.mark.parametrize("name", ["resnet50", "densenet121", "inceptionv3"])
 def test_gradcam_architectures(name):
     torch.set_num_threads(2)
     model = build_model(name, pretrained=False)
+    size = 128 if name == "inceptionv3" else 64
     for target in (0, 1):
-        probability, heat, returned = gradcam(model, torch.randn(1, 3, 64, 64), target)
+        probability, heat, returned = gradcam(model, torch.randn(1, 3, size, size), target)
         assert 0 <= probability <= 1
         assert np.isfinite(heat).all() and heat.min() >= 0 and heat.max() <= 1
         assert returned == target
-    layer = model.layer4 if name == "resnet50" else model.features.norm5
+    layer = (
+        model.layer4
+        if name == "resnet50"
+        else model.Mixed_7c if name == "inceptionv3" else model.features.norm5
+    )
     assert not layer._forward_hooks

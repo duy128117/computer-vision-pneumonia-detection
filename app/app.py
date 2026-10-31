@@ -9,13 +9,20 @@ from src.inference import validate_image, predict
 from src.utils import device
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@st.cache_resource
+def cached_checkpoint(path):
+    return load_checkpoint(Path(path), device())
+
+
 st.set_page_config(page_title="Pneumonia • X-ray", page_icon="🫁", layout="wide")
 st.title("Phân loại viêm phổi từ X-quang ngực")
-st.caption("ResNet50 · DenseNet121 · Grad-CAM")
+st.caption("ResNet50 · DenseNet121 · InceptionV3 · Grad-CAM")
 st.info(
     "Demo nghiên cứu, không thay thế chẩn đoán lâm sàng. Grad-CAM không chứng minh mô hình suy luận giống bác sĩ."
 )
-name = st.sidebar.selectbox("Mô hình", ["resnet50", "densenet121"])
+name = st.sidebar.selectbox("Mô hình", ["resnet50", "densenet121", "inceptionv3"])
 checkpoint = ROOT / "checkpoints" / f"best_{name}.pth"
 st.sidebar.caption("NORMAL = 0 · PNEUMONIA = 1 | Ngưỡng 0.5")
 if not checkpoint.exists():
@@ -29,7 +36,7 @@ if upload is not None:
             raise ValueError("Dung lượng tối đa 20 MB.")
         image = validate_image(upload)
         with st.spinner("Đang dự đoán và tính Grad-CAM…"):
-            model, metadata = load_checkpoint(checkpoint, device())
+            model, metadata = cached_checkpoint(str(checkpoint))
             result, images = predict(model, metadata, image)
         st.subheader("Viêm phổi" if result["prediction"] == "PNEUMONIA" else "Bình thường")
         columns = st.columns(3)
@@ -45,6 +52,6 @@ if upload is not None:
             (image, images[1], images[2]),
             ["Ảnh X-quang gốc", "Grad-CAM Heatmap", "Grad-CAM Overlay"],
         ):
-            column.image(picture, caption=label, use_container_width=True)
+            column.image(picture, caption=label, width="stretch")
     except (ValueError, OSError, RuntimeError, Image.DecompressionBombError) as error:
         st.error(str(error))

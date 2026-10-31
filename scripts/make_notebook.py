@@ -37,13 +37,14 @@ cell(
 )
 cell("code", "run('-m', 'src.train', '--config', 'configs/resnet50.yaml')")
 cell("code", "run('-m', 'src.train', '--config', 'configs/densenet121.yaml')")
+cell("code", "run('-m', 'src.train', '--config', 'configs/inceptionv3.yaml')")
 cell(
     "code",
-    "for name in ['resnet50', 'densenet121']:\n    run('-m', 'src.evaluate', '--checkpoint', f'checkpoints/best_{name}.pth')\nrun('-m', 'src.report')\ndisplay(pd.read_csv('results/model_comparison.csv'))",
+    "for name in ['resnet50', 'densenet121', 'inceptionv3']:\n    run('-m', 'src.evaluate', '--checkpoint', f'checkpoints/best_{name}.pth')\nrun('-m', 'src.report')\ndisplay(pd.read_csv('results/model_comparison.csv'))",
 )
 cell(
     "code",
-    "for name in ['resnet50', 'densenet121']:\n    display(pd.read_csv(f'logs/history_{name}.csv'))\n    for suffix in ['loss_curve','accuracy_curve','precision_recall','f1_curve','auc_curve']:\n        display(Image(filename=f'results/plots/{name}_{suffix}.png'))\ndisplay(Image(filename='results/roc/model_comparison_roc.png'))",
+    "for name in ['resnet50', 'densenet121', 'inceptionv3']:\n    display(pd.read_csv(f'logs/history_{name}.csv'))\n    for suffix in ['loss_curve','accuracy_curve','precision_recall','f1_curve','auc_curve']:\n        display(Image(filename=f'results/plots/{name}_{suffix}.png'))\ndisplay(Image(filename='results/roc/model_comparison_roc.png'))",
 )
 cell(
     "markdown",
@@ -51,7 +52,7 @@ cell(
 )
 cell(
     "code",
-    "for name in ['resnet50','densenet121']:\n    for case in ['TP','TN','FP','FN']:\n        images = sorted(Path(f'results/gradcam/{name}').glob(f'{case}_*_overlay.png'))\n        print(name, case, 'Không có mẫu' if not images else '')\n        for image in images: display(Image(filename=str(image)))",
+    "for name in ['resnet50','densenet121','inceptionv3']:\n    for case in ['TP','TN','FP','FN']:\n        images = sorted(Path(f'results/gradcam/{name}').glob(f'{case}_*_overlay.png'))\n        print(name, case, 'Không có mẫu' if not images else '')\n        for image in images: display(Image(filename=str(image)))",
 )
 cell(
     "markdown",

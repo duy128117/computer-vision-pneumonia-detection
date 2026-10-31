@@ -18,7 +18,7 @@ if __name__ == "__main__":
             run("scripts/download_data.py")
         run("-m", "src.dataset")
     run("scripts/audit_exclusions.py")
-    for name in ("resnet50", "densenet121"):
+    for name in ("resnet50", "densenet121", "inceptionv3"):
         if not Path(f"logs/run_{name}.json").exists():
             run("-m", "src.train", "--config", f"configs/{name}.yaml")
         run("-m", "src.evaluate", "--checkpoint", f"checkpoints/best_{name}.pth")

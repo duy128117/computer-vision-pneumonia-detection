@@ -23,7 +23,7 @@ def main():
     validate_manifest(manifest)
     test = manifest[manifest.split == "test"].set_index("path")
     required = ["loss", "accuracy", "precision", "recall", "f1", "auc"]
-    for name in ("resnet50", "densenet121"):
+    for name in ("resnet50", "densenet121", "inceptionv3"):
         checkpoint = torch.load(
             root / "checkpoints" / f"best_{name}.pth", map_location="cpu", weights_only=True
         )
