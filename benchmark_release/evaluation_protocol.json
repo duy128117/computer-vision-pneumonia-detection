@@ -1,0 +1,35 @@
+{
+  "benchmark_name": "Kermany-Clean-Disjoint Pediatric Pneumonia Benchmark (KCD-Pneumonia)",
+  "version": "2.0",
+  "description": "Certified patient-disjoint, deduplicated evaluation benchmark derived from Kermany chest X-ray dataset.",
+  "splits": {
+    "train": {
+      "samples": 3815,
+      "patients": "disjoint_pool_train",
+      "label_ratio_normal_pneumonia": "942 / 2873"
+    },
+    "val": {
+      "samples": 938,
+      "patients": "disjoint_pool_val",
+      "label_ratio_normal_pneumonia": "241 / 697"
+    },
+    "test": {
+      "samples": 618,
+      "patients": "disjoint_pool_test_strictly_held_out",
+      "label_ratio_normal_pneumonia": "231 / 387"
+    }
+  },
+  "evaluation_standard": {
+    "decision_threshold": 0.5,
+    "metrics": [
+      "Accuracy",
+      "Sensitivity (Recall)",
+      "Specificity",
+      "F1-Score",
+      "ROC-AUC",
+      "Exact McNemar p-value"
+    ],
+    "bootstrap_ci": "95% BCa / Percentile with N=1000 resamples",
+    "cross_validation_clarification": "5-Fold CV is reported solely on development cohort (4,753 images); test set (618 images) is strictly frozen."
+  }
+}
