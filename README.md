@@ -1,264 +1,83 @@
-# 🫁 PneumoScan AI (PneumoGuard-AI)
-### Clinical CAD Workstation & Explainable Deep Learning for Pediatric Pneumonia Diagnosis on Chest Radiographs
+# 🫁 PneumoScan AI - Chest X-Ray Pneumonia Detection CAD
+
+A Deep Learning Computer-Aided Diagnosis (CAD) system and clinical workstation for automated pediatric pneumonia screening and Explainable AI (Grad-CAM) from Chest X-rays.
 
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![PyTorch 2.6](https://img.shields.io/badge/PyTorch-2.6.0-EE4C2C.svg?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![Torchvision](https://img.shields.io/badge/Torchvision-0.21.0-FF6F00.svg?style=flat)](https://pytorch.org/)
-[![Streamlit App](https://img.shields.io/badge/Streamlit-CAD_Workstation-FF4B4B.svg?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![CUDA 12.4](https://img.shields.io/badge/CUDA-12.4_Accelerated-76B900.svg?style=flat&logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
+[![PyTorch 2.6](https://img.shields.io/badge/PyTorch-2.6-EE4C2C.svg?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B.svg?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Standards: HIPAA & FDA SaMD](https://img.shields.io/badge/Compliance-HIPAA_%26_FDA_SaMD_21_CFR_Part_11-0284c7.svg)](#-compliance--electronic-audit-trail)
-
-> **Academic Project:** Advanced Computer Vision (*Thị giác máy tính nâng cao - CV CT2 F403*)  
-> **Authors:** **Mai Phước Thịnh** & **Nguyễn Đình Duy** (Group 03)  
-> **Project Advisor:** **Dr. Huỳnh Hữu Hưng**  
-> **Documentation:** [Full Thesis Report (DOCX)](file:///d:/CODE/tgmt/baocao_final_viemphoi.docx) • [IEEE-Style Paper (DOCX)](file:///d:/CODE/tgmt/Paper_Pneumonia_Classification.docx) • [Slide Deck (PPTX)](file:///d:/CODE/tgmt/So_Sanh_3_Mo_Hinh.pptx) • [Presentation Script (MD)](file:///d:/CODE/tgmt/KICH_BAN_THUYET_TRINH_BAO_CAO.md)
 
 ---
 
-## 📌 Executive Summary
+## ⚡ Highlights
 
-**PneumoScan AI (PneumoGuard-AI)** is an end-to-end, research-backed, and clinically translated **Computer-Aided Diagnosis (CAD) system** engineered for automated pediatric pneumonia screening and visual explainability from Chest X-Ray (CXR) radiography. 
-
-While conventional deep learning models often operate as opaque "black boxes" and frequently report inflated performance due to uncontrolled data leakage, this project addresses two pivotal clinical hurdles:
-1. **Eliminating Patient Data Contamination:** Implements a strict **Patient-Disjoint Splitting protocol** combined with **SHA-256 pixel deduplication**, demonstrating that naive random partitioning artificially inflates accuracy by **+7.79%** and specificity by **+20.74%**.
-2. **Clinical Decision Support & Explainability (XAI):** Couples transfer-learned deep architectures (**ResNet-50**, **DenseNet-121**, **InceptionV3**, and a customized **Spatial Lung-RoI Attention Gate**) with **Gradient-weighted Class Activation Mapping (Grad-CAM)** to visually localize alveolar consolidation and interstitial infiltrates.
-3. **Hospital-Grade CAD Workstation:** Delivers a production-styled medical UI (Streamlit) equipped with simulated PACS/DICOM windowing presets, automated vitals cross-checking, role-based doctor authentication, and an electronic **Audit Trail compliant with FDA SaMD 21 CFR Part 11 and HIPAA**.
+- **Deep Learning Architectures:** Evaluates ResNet-50, DenseNet-121, InceptionV3, and ResNet-50 with Spatial Attention Gate.
+- **High Sensitivity:** Reaches **99.48% Sensitivity** and **90.61% Accuracy** on a patient-disjoint test set ($N = 618$ images).
+- **Explainable AI (Grad-CAM):** Real-time activation heatmaps (Jet, Turbo, Inferno) pinpointing pulmonary lesions and consolidations.
+- **Clinical CAD Workstation:** Full-featured Streamlit interface featuring PACS windowing presets, patient record tracking, and electronic audit trail.
 
 ---
 
-## 🖼️ Clinical Workstation Interface
+## 📊 Benchmark Results
 
-| Clinical Inference & CAD Triage | Explainable AI (Grad-CAM Heatmaps) |
-|:---:|:---:|
-| ![CAD Workstation](assets/demo_cad_workstation.jpg) | ![Grad-CAM XAI](assets/demo_gradcam_xai.jpg) |
-| *Multi-model selection, SpO2/WBC vital signs, and instant clinical diagnostic advice.* | *Triplet visualization: Native CXR, Activation Heatmap, and Anatomical Fusion.* |
+Evaluated on the patient-disjoint test distribution (387 Pneumonia, 231 Normal):
 
-| Patient Records Management (142 Cases) | FDA SaMD Electronic Audit Trail |
-|:---:|:---:|
-| ![Patient Records](assets/demo_patient_records.jpg) | ![Audit Trail](assets/demo_audit_trail.jpg) |
-| *Real-time cohort tracking, priority urgency tags, and one-click CAD review.* | *Immutable SHA-256 hash logging, latency benchmark, and CSV audit export.* |
-
----
-
-## 🔬 Core Scientific Contributions
-
-### 1. The Data Leakage Crisis & Patient-Disjoint Verification
-In standard medical datasets, multiple radiographs often belong to the same patient (e.g., follow-up scans, lateral projections). Random partitioning allows identical patient anatomical signatures to leak across training and test subsets:
-- **Controlled Leakage Experiment:** We constructed a controlled experiment comparing naive random partitioning against strict patient-level grouping (`StratifiedGroupKFold`, 80/20 split):
-  - **Literature Naive Split:** Accuracy = **98.40%**, Specificity = **96.50%**, AUROC = **0.9950**.
-  - **Clean Patient-Disjoint Split:** Accuracy = **90.61%**, Specificity = **75.76%**, AUROC = **0.9679**.
-  - **Identified Gap:** Accuracy is inflated by **+7.79%**, and Specificity is over-estimated by **+20.74%** on leaking samples.
-  - On non-overlapping patients, the naive model plummets to **80.92%**, exposing catastrophic failure in real-world deployment.
-
-![Leakage Inflation Gap](assets/leakage_inflation_gap.png)
-
-### 2. Deep Comparative Model Benchmark
-Four distinct deep convolutional paradigms were evaluated under rigorous identical conditions:
-- **ResNet-50:** Deep residual skip-connections mitigate vanishing gradients; achieves the highest overall accuracy (**90.61%**) and strong clinical sensitivity (**99.48%** with only 2 false negatives out of 387 cases).
-- **DenseNet-121:** Feature reuse across dense blocks maximizes parameter efficiency (**86.57%** Accuracy, **99.74%** Sensitivity, **0.9578** AUROC).
-- **InceptionV3:** Multi-scale receptive fields (1x1, 3x3, 5x5 asymmetric factorized convolutions); reaches **100.0% Sensitivity**, but suffers from higher false alarms (Specificity **62.77%**).
-- **ResNet-50 Spatial Attention Gate:** Incorporates an anatomical lung-RoI attention mechanism constraining activations to pulmonary parenchyma (**88.03%** Accuracy, **99.22%** Recall, **0.9624** AUROC), reducing false activations in the subdiaphragmatic region.
-
-### 3. Statistical Rigor & McNemar's Significance Test
-To verify that performance disparities are statistically genuine rather than random variations, pairwise **McNemar's tests with continuity correction** were conducted:
-- ResNet-50 vs. DenseNet-121: $\chi^2 = 15.82$, **$p = 0.000070$** ($p < 0.001$).
-- ResNet-50 vs. InceptionV3: $\chi^2 = 17.78$, **$p = 0.000025$** ($p < 0.001$).
-- Proves ResNet-50's statistical superiority over DenseNet-121 and InceptionV3 on the clean patient-disjoint test distribution.
+| Model | Accuracy | Sensitivity (Recall) | Specificity | F1-Score | AUROC |
+|:---|:---:|:---:|:---:|:---:|:---:|
+| **ResNet-50 (Best)** | **90.61%** | **99.48%** | **75.76%** | **0.9300** | **0.9679** |
+| **ResNet-50 Attention** | 88.03% | 99.22% | 69.26% | 0.9121 | 0.9624 |
+| **DenseNet-121** | 86.57% | 99.74% | 64.50% | 0.9029 | 0.9578 |
+| **InceptionV3** | 86.08% | 100.0% | 62.77% | 0.9000 | 0.9629 |
 
 ---
 
-## 📊 Comprehensive Experimental Results
+## 🖥️ Workstation Features
 
-Evaluated on the benchmark patient-disjoint test set ($N = 618$ images: 387 Pneumonia, 231 Normal):
-
-| Model Architecture | Parameters | Accuracy | Sensitivity (Recall) | Specificity | F1-Score | AUROC | False Negatives (FN) | False Positives (FP) |
-|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **ResNet-50 (Champion)** | 23.5M | **90.61%** | **99.48%** | **75.76%** | **0.9300** | **0.9679** | **2 / 387** | 56 / 231 |
-| **ResNet-50 Attention** | 25.1M | 88.03% | 99.22% | 69.26% | 0.9121 | 0.9624 | 3 / 387 | 71 / 231 |
-| **DenseNet-121** | **7.0M** | 86.57% | 99.74% | 64.50% | 0.9029 | 0.9578 | **1 / 387** | 82 / 231 |
-| **InceptionV3** | 21.8M | 86.08% | **100.0%** | 62.77% | 0.9000 | 0.9629 | **0 / 387** | 86 / 231 |
-
-<div align="center">
-  <img src="assets/model_comparison.png" width="48%" />
-  <img src="assets/model_comparison_roc.png" width="48%" />
-</div>
-
-<div align="center">
-  <img src="assets/resnet50_confusion_matrix.png" width="45%" />
-</div>
-
-> **Clinical Interpretation:** In emergency triage (ED/ICU), **Sensitivity (Recall)** is the paramount clinical metric because a False Negative (missing an active bacterial pneumonia infection) poses immediate life-threatening risk. ResNet-50 achieves 99.48% recall while maintaining significantly superior specificity (75.76%) compared to InceptionV3 (62.77%), thereby preventing unnecessary antibiotic overprescription.
+- **🫁 CAD Diagnosis:** Upload custom CXR images or select clinical presets; instant inference with SpO2, Body Temp, and WBC vitals cross-checking.
+- **📊 Grad-CAM XAI:** Triplet visualization (Native CXR, Activation Heatmap, Anatomical Fusion) with alpha opacity slider.
+- **📁 Patient Records:** Management dashboard for 142 patient cases with clinical triage priority levels.
+- **📈 Benchmark Metrics:** Interactive model performance comparison, confusion matrices, and ROC curves.
+- **⏱️ Audit Trail:** Tamper-evident electronic logging with SHA-256 verification and live CSV export.
+- **⚖️ PACS Windowing:** Medical display presets (Lung Window, Mediastinum, Bone) with contrast and sharpness tuning.
 
 ---
 
-## 🧠 Explainable AI (XAI) & Grad-CAM Visualization
+## 🚀 Quickstart
 
-To comply with clinical AI governance guidelines (WHO & FDA Good Machine Learning Practice), the system integrates **Grad-CAM (Gradient-weighted Class Activation Mapping)**:
-
-$$\alpha_k^c = \frac{1}{Z} \sum_i \sum_j \frac{\partial Y^c}{\partial A_{i,j}^k}$$
-
-$$L_{\text{Grad-CAM}}^c = \text{ReLU}\left( \sum_k \alpha_k^c A^k \right)$$
-
-### Triplet Visual Presentation:
-1. **Native CXR (DICOM PA View):** Raw radiographic high-resolution view.
-2. **Grad-CAM Activation Heatmap:** Quantitative gradient localization with selectable palettes:
-   - `Jet (Classic CAD)`: High contrast multi-hue spectrum.
-   - `Turbo (Google HDR)`: Perceptually uniform color transitions.
-   - `Inferno (Medical Monotonic)`: Black-body radiation curve avoiding hue artifacts.
-3. **Anatomical Structural Fusion:** Alpha-blended overlay (0% - 100% opacity slider) projecting activations directly onto rib cages, diaphragmatic domes, and bronchovascular markings.
-
----
-
-## 💻 PneumoScan AI CAD Workstation Architecture
-
-The software is engineered as a unified medical station built with **Streamlit** and modular components:
-
-```mermaid
-flowchart TD
-    subgraph Data Layer
-        A[Chest X-Ray / DICOM] --> B[SHA-256 Deduplication]
-        B --> C[Patient-Disjoint Split]
-    end
-
-    subgraph Deep Learning Engine
-        C --> D{Selected Model}
-        D -->|ResNet-50| E1[Residual Blocks]
-        D -->|DenseNet-121| E2[Dense Connections]
-        D -->|ResNet-50 Attn| E3[Spatial Attention Gate]
-        E1 & E2 & E3 --> F[Classification Softmax]
-        E1 & E2 & E3 --> G[Grad-CAM Engine]
-    end
-
-    subgraph Clinical CAD Workstation UI
-        F & G --> H[Top Capsule Bar]
-        F & G --> I[CAD Triage Screen]
-        F & G --> J[Triplet XAI Screen]
-        F & G --> K[Cohort Manager 142 cases]
-        F & G --> L[PACS Filter Presets]
-        F & G --> M[Audit Trail HIPAA & FDA]
-    end
-```
-
-### Workstation Modules:
-- **🫁 CAD Diagnosis Workspace:** Immediate single-scan analysis with patient vital signs (SpO2, Body Temp, WBC), preset pediatric cases, or custom JPEG/PNG upload.
-- **📊 XAI Heatmap Workspace:** Colormap switching, alpha transparency slider, peak activation reporting, and DICOM-SR structured reporting synchronization.
-- **📁 Patient Records Cohort (142 Cases):** Multi-criteria clinical cohort table with status pills, priority flags, department filters, and instant cross-navigation (`🌓 Mở CAD`).
-- **📈 Model Benchmark Dashboard:** Comparative ROC curves, confusion matrices, McNemar pairwise statistical test matrix, and latency benchmarks.
-- **⏱️ Electronic Audit Trail:** FDA SaMD 21 CFR Part 11 compliant tamper-proof event logging with SHA-256 integrity hashing and live CSV export.
-- **⚖️ PACS Windowing Calibration:** Radiologist window presets (`Lung Window W1500/L-600`, `Mediastinum W350/L50`, `Bone Window W2000/L300`), contrast, brightness, edge sharpness, and bone-black inversion.
-- **🔐 Doctor Licensure Authentication:** Doctor registration verified with CCHN (*Chứng chỉ hành nghề*), institutional email formatting, and session persistence.
-
----
-
-## 📂 Repository Structure
-
-```text
-├── app/
-│   └── app.py                      # Production Clinical CAD Workstation (Streamlit)
-├── assets/                         # High-res UI screenshots & benchmark curves
-│   ├── demo_cad_workstation.jpg
-│   ├── demo_gradcam_xai.jpg
-│   ├── demo_patient_records.jpg
-│   ├── demo_audit_trail.jpg
-│   ├── model_comparison.png
-│   ├── leakage_inflation_gap.png
-│   └── resnet50_confusion_matrix.png
-├── checkpoints/                    # Saved PyTorch model weights (*.pth)
-├── configs/                        # Training & hyperparameter YAML configurations
-├── data/                           # Manifests, splits, and patient indices
-├── notebooks/                      # Exploratory data analysis & prototyping
-├── results/                        # Multi-seed metrics, confusion matrices, JSONs
-├── scripts/                        # Reproducibility & verification scripts
-│   ├── run_all.py                  # End-to-end execution pipeline
-│   ├── step3_multiseed_test.py     # Multi-seed (N=5) statistical validation
-│   ├── step5_benchmark_release.py  # Model benchmark exporter
-│   ├── verify_results.py           # Integrity and audit checks
-│   └── export_final_report_docx.py # Academic Word report builder
-├── src/                            # Deep learning modular codebase
-│   ├── dataset.py                  # Patient-disjoint PyTorch Dataset & Transforms
-│   ├── models.py                   # ResNet50, DenseNet121, InceptionV3, Attention
-│   ├── train.py                    # Two-stage fine-tuning with mixed precision
-│   ├── gradcam.py                  # Custom Grad-CAM hook and heatmap generator
-│   └── auth.py                     # CCHN Doctor authentication & SQLite storage
-├── requirements.txt                # Production Python dependencies
-└── README.md                       # Master portfolio documentation
-```
-
----
-
-## 🚀 Quickstart & Installation
-
-### Prerequisites
-- **OS:** Windows 10/11 or Linux (Ubuntu 20.04/22.04)
-- **Python:** 3.11 recommended
-- **Hardware:** NVIDIA GPU with $\ge 6\text{ GB}$ VRAM (CUDA 12.4 supported) or modern multi-core CPU.
-
-### 1. Clone Repository & Setup Virtual Environment
+### 1. Setup Environment
 ```bash
-git clone https://github.com/your-username/PneumoScan-AI.git
-cd PneumoScan-AI
+git clone https://github.com/duy128117/computer-vision-pneumonia-detection.git
+cd computer-vision-pneumonia-detection
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv .venv
-
-# Activate on Windows (PowerShell):
-.\.venv\Scripts\Activate.ps1
-# Activate on Linux/macOS:
-source .venv/bin/activate
+.\.venv\Scripts\Activate.ps1  # Windows PowerShell
+# source .venv/bin/activate    # Linux/macOS
 ```
 
-### 2. Install PyTorch & Dependencies
+### 2. Install Dependencies
 ```bash
-# For NVIDIA GPU (CUDA 12.4):
-pip install --no-cache-dir torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
-
-# For CPU-only:
-pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cpu
-
-# Install application dependencies:
 pip install -r requirements.txt
 ```
 
-### 3. Launch the CAD Workstation App
+### 3. Run Application
 ```bash
 streamlit run app/app.py
 ```
-Open your browser at **`http://localhost:8501`** to interact with the workstation.
-
-### 4. Reproduce Model Training & Benchmarks
-```bash
-# Run full automated training, audit, and evaluation pipeline:
-python scripts/run_all.py
-
-# Verify patient-disjoint split and statistical metrics:
-python scripts/verify_results.py
-```
+Open **`http://localhost:8501`** in your browser.
 
 ---
 
-## 👥 Authors & Academic Credits
+## 🛠️ Tech Stack
 
-This project was conducted as the Graduation / Capstone Defense for the **Advanced Computer Vision** course at University:
-
-- **Mai Phước Thịnh**  
-  *Responsibilities:* Problem formulation, Patient-disjoint data sanitization pipeline, Two-stage transfer learning for ResNet-50 & DenseNet-121, Thesis presentation (Section 1).
-- **Nguyễn Đình Duy**  
-  *Responsibilities:* InceptionV3 & Spatial Attention Gate modeling, Generalization gap quantification, Multi-metric evaluation, McNemar statistical test, Grad-CAM XAI engine, and CAD Workstation UI architecture.
-- **Advisor:** **Dr. Huỳnh Hữu Hưng** (*Huỳnh Hữu Hưng, Ph.D.*)
+- **Frameworks:** PyTorch 2.6, Torchvision, Streamlit
+- **Image Processing & XAI:** OpenCV, Pillow, Grad-CAM
+- **Data & Evaluation:** NumPy, Pandas, Scikit-learn, Matplotlib
 
 ---
 
-## 📜 References & Citations
+## 👥 Authors
 
-1. **Dataset:** Kermany, D. S., Goldbaum, M., Zhang, K., et al. *"Identifying Medical Diagnoses and Treatable Diseases by Image-Based Deep Learning"*, **Cell**, 172(5), 1122-1131, 2018. [DOI: 10.1016/j.cell.2018.02.010](https://doi.org/10.1016/j.cell.2018.02.010).
-2. **Grad-CAM:** Selvaraju, R. R., Cogswell, M., Das, A., Vedaldi, A., Parikh, D., & Batra, D. *"Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based Localization"*, **IEEE ICCV**, 2017.
-3. **ResNet:** He, K., Zhang, X., Ren, S., & Sun, J. *"Deep Residual Learning for Image Recognition"*, **IEEE CVPR**, 2016.
-4. **DenseNet:** Huang, G., Liu, Z., Van Der Maaten, L., & Weinberger, K. Q. *"Densely Connected Convolutional Networks"*, **IEEE CVPR**, 2017.
-5. **InceptionV3:** Szegedy, C., Vanhoucke, V., Ioffe, S., Shlens, J., & Wojna, Z. *"Rethinking the Inception Architecture for Computer Vision"*, **IEEE CVPR**, 2016.
-
----
-
-<div align="center">
-  <b>Developed for Clinical Decision Support • © 2026 PneumoScan Medical Systems</b>
-</div>
+- **Mai Phước Thịnh** & **Nguyễn Đình Duy** (Group 03)
+- **Advisor:** Dr. Huỳnh Hữu Hưng
+- **Course:** Advanced Computer Vision (*Thị giác máy tính nâng cao*)
